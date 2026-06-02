@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>市场部任务管理</title>
+<style>body{font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;background:#1a2a4a;color:#fff;flex-direction:column;gap:16px}.loader{width:40px;height:40px;border:3px solid rgba(255,255,255,.2);border-top-color:#c9a84c;border-radius:50%;animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}</style>
+</head><body>
+<div class="loader"></div>
+<p>正在连接...</p>
+<script>
+fetch('https://raw.githubusercontent.com/17662474164wbg-maker/task-center/master/tunnel-url.txt?'+Date.now())
+.then(r=>r.text()).then(url=>{
+  if(url.trim()){window.location.href=url.trim()+'/tasks.html'}
+  else{document.body.innerHTML='<p style=color:#c9a84c>暂无可用地址，请稍后刷新</p>'}
+}).catch(()=>document.body.innerHTML='<p>加载失败，请刷新重试</p>')
+</script>
+</body></html>
