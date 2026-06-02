@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>共享空间</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", -apple-system, sans-serif;
+    background: #f5f3f0; color: #2c2c2c; min-height: 100vh;
+  }
+  .header {
+    background: #1a2a4a; color: #fff;
+    padding: 20px 40px; display: flex; align-items: center; justify-content: space-between;
+  }
+  .header h1 { font-size: 22px; font-weight: 500; letter-spacing: 2px; }
+  .header .gold { color: #c9a84c; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 28px 20px; }
+
+  .upload-box { background: #fff; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+  .upload-zone {
+    border: 2px dashed #c9a84c; border-radius: 12px;
+    padding: 40px; text-align: center; cursor: pointer;
+    background: #faf9f6; transition: all 0.2s; margin-bottom: 16px;
+  }
+  .upload-zone:hover, .upload-zone.drag { border-color: #1a2a4a; background: #f0efe8; }
+  .upload-zone .icon { font-size: 44px; margin-bottom: 8px; }
+  .upload-zone p { color: #666; font-size: 14px; }
+  .upload-zone .tip { color: #999; font-size: 12px; margin-top: 6px; }
+  input[type="file"] { display: none; }
+
+  .uploader-row {
+    display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+  }
+  .uploader-row input {
+    flex: 1; min-width: 140px; padding: 10px 14px;
+    border: 1px solid #ddd; border-radius: 8px; font-size: 14px;
+    background: #fafafa; outline: none; transition: border-color 0.2s;
+  }
+  .uploader-row input:focus { border-color: #1a2a4a; background: #fff; }
+  .uploader-row label { font-size: 13px; color: #666; white-space: nowrap; }
+
+  .btn-row { display: flex; gap: 10px; margin-bottom: 24px; }
+  .btn-primary { flex: 1; padding: 11px; font-size: 14px; text-align: center;
+    background: #1a2a4a; color: #fff; border: none; border-radius: 8px; cursor: pointer; }
+  .btn-primary:hover { background: #2c4a7c; }
+  .btn-outline { flex: 1; padding: 11px; font-size: 14px; text-align: center;
+    background: #fff; color: #1a2a4a; border: 1px solid #1a2a4a; border-radius: 8px; cursor: pointer; }
+  .btn-outline:hover { background: #f5f3f0; }
+
+  .toolbar {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;
+  }
+  .toolbar .count { color: #666; font-size: 14px; }
+  .toolbar .refresh {
+    background: none; border: 1px solid #ccc; border-radius: 6px;
+    padding: 6px 16px; cursor: pointer; font-size: 13px; color: #666;
+  }
+  .toolbar .refresh:hover { background: #f0f0f0; }
+
+  .file-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 14px;
+  }
+  .file-card {
+    background: #fff; border-radius: 12px; padding: 20px;
+    transition: box-shadow 0.2s; display: flex; flex-direction: column;
+    gap: 10px;
+  }
+  .file-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+  .file-card .icon { font-size: 40px; text-align: center; }
+  .file-card .name {
+    font-size: 14px; color: #1a2a4a; font-weight: 500;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .file-card .meta {
+    font-size: 11px; color: #999; display: flex; flex-direction: column; gap: 3px;
+  }
+  .file-card .meta span { display: block; }
+  .file-card .uploader-tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: #eef2f7; color: #1a2a4a; font-size: 11px;
+    padding: 3px 8px; border-radius: 10px; width: fit-content;
+  }
+  .file-card .actions { display: flex; gap: 6px; margin-top: auto; }
+  .file-card .actions a, .file-card .actions button {
+    flex: 1; text-align: center; padding: 7px 0; font-size: 12px;
+    border-radius: 6px; border: none; cursor: pointer; text-decoration: none;
+  }
+  .btn-dl { background: #1a2a4a; color: #fff; }
+  .btn-dl:hover { background: #2c4a7c; }
+  .btn-del { background: none; color: #c0392b; border: 1px solid #e0e0e0 !important; }
+  .btn-del:hover { background: #fdf2f2; }
+
+  .empty { text-align: center; padding: 80px 0; color: #999; grid-column: 1/-1; }
+  .empty .icon { font-size: 64px; margin-bottom: 16px; }
+
+  .toast {
+    position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+    background: #1a2a4a; color: #fff; padding: 12px 28px;
+    border-radius: 8px; font-size: 14px; z-index: 999;
+    opacity: 0; transition: opacity 0.3s; pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+  .progress {
+    position: fixed; top: 0; left: 0; right: 0; height: 3px;
+    background: #c9a84c; z-index: 1000;
+    transform: scaleX(0); transform-origin: left;
+    transition: transform 0.3s;
+  }
+
+  @media (max-width: 600px) {
+    .file-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+    .uploader-row { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<div class="toast" id="toast"></div>
+
+<div class="header">
+  <h1>共享空间 <span class="gold">/</span> 文件交换</h1>
+  <div style="display:flex;align-items:center;gap:16px">
+    <a href="/tasks.html" style="color:#889;text-decoration:none;font-size:13px;font-weight:500;transition:color .2s" onmouseover="this.style.color='#c9a84c'" onmouseout="this.style.color='#889'">任务管理 →</a>
+    <span style="font-size:13px;color:#889">网格视图·不限大小</span>
+  </div>
+</div>
+
+<div class="container">
+  <div class="upload-box">
+    <div class="upload-zone" id="dropZone">
+      <div class="icon">📂</div>
+      <p>拖拽文件到这里，或点击下方按钮</p>
+      <p class="tip">支持文件/文件夹上传，无大小限制 · 自动识别上传电脑</p>
+      <input type="file" id="fileInput" multiple>
+      <input type="file" id="folderInput" webkitdirectory>
+    </div>
+    <div class="btn-row" style="margin-bottom:0">
+      <button class="btn-primary" onclick="document.getElementById('fileInput').click()">选择文件</button>
+      <button class="btn-outline" onclick="document.getElementById('folderInput').click()">选择文件夹</button>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <span class="count" id="fileCount"></span>
+    <button class="refresh" onclick="loadFiles()">刷新列表</button>
+  </div>
+
+  <div class="file-grid" id="fileList">
+    <div class="empty">
+      <div class="icon">📭</div>
+      <p>还没有文件，上传第一个吧</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const folderInput = document.getElementById('folderInput');
+const fileList = document.getElementById('fileList');
+const fileCount = document.getElementById('fileCount');
+const progress = document.getElementById('progress');
+const toastEl = document.getElementById('toast');
+
+let toastTimer;
+function toast(msg) {
+  toastEl.textContent = msg; toastEl.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2500);
+}
+
+function iconForFile(name) {
+  const ext = name.split('.').pop().toLowerCase();
+  if (['jpg','jpeg','png','gif','svg','webp','bmp','tiff'].includes(ext)) return '🖼️';
+  if (['psd','ai','sketch','fig','eps'].includes(ext)) return '🎨';
+  if (['pdf'].includes(ext)) return '📄';
+  if (['doc','docx','txt'].includes(ext)) return '📝';
+  if (['xls','xlsx','csv'].includes(ext)) return '📊';
+  if (['ppt','pptx'].includes(ext)) return '📽️';
+  if (['zip','rar','7z','tar','gz'].includes(ext)) return '📦';
+  if (['mp4','mov','avi','mkv'].includes(ext)) return '🎬';
+  if (['mp3','wav','flac'].includes(ext)) return '🎵';
+  return '📁';
+}
+
+function formatTime(iso) {
+  const d = new Date(iso);
+  const pad = n => String(n).padStart(2, '0');
+  return `${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+async function loadFiles() {
+  try {
+    const res = await fetch('/api/files?_=' + Date.now());
+    const files = await res.json();
+    fileCount.textContent = `共 ${files.length} 个文件`;
+    if (files.length === 0) {
+      fileList.innerHTML = '<div class="empty"><div class="icon">📭</div><p>还没有文件，上传第一个吧</p></div>';
+      return;
+    }
+    fileList.innerHTML = files.map(f => `
+      <div class="file-card">
+        <div class="icon">${iconForFile(f.name)}</div>
+        <div class="name" title="${f.name}">${f.name}</div>
+        <div class="meta">
+          <span>${f.sizeStr} · ${formatTime(f.time)}</span>
+          ${f.uploader ? `<span class="uploader-tag">👤 ${f.uploader} · ${f.computerName || ''}</span>` : ''}
+          ${f.computerId ? `<span class="uploader-tag">💻 ${f.computerId}</span>` : ''}
+        </div>
+        <div class="actions">
+          <a class="btn-dl" href="/api/download/${encodeURIComponent(f.name)}" title="下载">下载</a>
+          <button class="btn-del" onclick="deleteFile('${f.name.replace(/'/g, "\\'")}')">删除</button>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) { console.error(e); }
+}
+
+async function deleteFile(name) {
+  if (!confirm(`确定要删除「${name}」吗？`)) return;
+  try {
+    const res = await fetch(`/api/delete?name=${encodeURIComponent(name)}`, { method: 'POST' });
+    if (!res.ok) throw new Error('删除失败');
+    toast('已删除');
+    loadFiles();
+  } catch(e) { toast('删除失败'); }
+}
+
+async function uploadFiles(files) {
+  if (!files.length) return;
+  const formData = new FormData();
+  for (const f of files) formData.append('files', f);
+
+  progress.style.transform = 'scaleX(0.5)';
+  toast(`正在上传 ${files.length} 个文件...`);
+
+  try {
+    const res = await fetch('/api/upload', { method: 'POST', body: formData });
+    const data = await res.json();
+    progress.style.transform = 'scaleX(1)';
+    setTimeout(() => progress.style.transform = 'scaleX(0)', 500);
+
+    if (data.success) {
+      const names = data.files.map(f => f.name).join('、');
+      toast(`上传成功：${names}`);
+      loadFiles();
+    }
+  } catch(e) {
+    progress.style.transform = 'scaleX(0)';
+    toast('上传失败，请重试');
+  }
+}
+
+dropZone.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', () => uploadFiles(fileInput.files));
+folderInput.addEventListener('change', () => uploadFiles(folderInput.files));
+
+dropZone.addEventListener('dragover', e => {
+  e.preventDefault(); dropZone.classList.add('drag');
+});
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('drag');
+  uploadFiles(e.dataTransfer.files);
+});
+
+loadFiles();
+</script>
+</body>
+</html>

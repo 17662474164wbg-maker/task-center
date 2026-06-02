@@ -1,0 +1,11 @@
+node_modules/
+uploads/
+request-attachments/
+tasks.json
+requests.json
+passwords.json
+server.log
+tunnel.log
+serveo.log
+*.log
+_meta.json

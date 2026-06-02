@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>市场部 · 任务中心</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#f8f6f3;--card:#fff;--navy:#0f1a30;--gold:#b8954a;--text:#1a1a1a;--muted:#767676;--border:#eae6de;--shadow:0 4px 24px rgba(0,0,0,.06);--radius:16px}
+body{font-family:"Inter","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);min-height:100vh;letter-spacing:.2px}
+
+.navbar{
+  background:var(--navy);color:#fff;padding:0 36px;height:60px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid rgba(255,255,255,.06);
+  position:sticky;top:0;z-index:50;
+}
+.navbar .brand{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:600;letter-spacing:.5px}
+.navbar .brand span{color:var(--gold);font-weight:400}
+.navbar .nav-links{display:flex;align-items:center;gap:20px}
+.navbar .nav-link{color:rgba(255,255,255,.6);text-decoration:none;font-size:13px;font-weight:500;transition:color .2s;padding:6px 0;border-bottom:2px solid transparent}
+.navbar .nav-link:hover,.navbar .nav-link.active{color:#fff;border-bottom-color:var(--gold)}
+
+.main{max-width:1240px;margin:0 auto;padding:28px 24px}
+.page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+.page-header h2{font-size:22px;font-weight:600;color:var(--navy)}
+.page-header .sub{font-size:13px;color:var(--muted)}
+
+.tab-switch{display:flex;gap:2px;background:var(--border);border-radius:12px;padding:3px;margin-bottom:28px;width:fit-content}
+.tab-switch button{padding:9px 28px;border-radius:10px;border:none;font-size:13px;font-weight:500;cursor:pointer;transition:.2s;background:transparent;color:var(--muted);font-family:inherit}
+.tab-switch button.active{background:var(--navy);color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+
+.filters{display:flex;gap:6px;margin-bottom:20px}
+.filters .f{padding:7px 18px;border-radius:20px;border:1px solid var(--border);font-size:12px;font-weight:500;cursor:pointer;background:var(--card);color:var(--muted);transition:.2s;font-family:inherit}
+.filters .f.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+
+.member-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(500px,1fr));gap:18px}
+.member-card{background:var(--card);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);border:1px solid var(--border);transition:box-shadow .3s}
+.member-card:hover{box-shadow:0 8px 32px rgba(0,0,0,.08)}
+.member-card .head{padding:18px 24px;display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--border);background:#fcfbf9}
+.member-card .avatar{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.member-card .info{min-width:0}
+.member-card .name{font-size:15px;font-weight:600;color:var(--navy)}
+.member-card .role{font-size:12px;color:var(--muted);margin-top:1px}
+.member-card .head-actions{margin-left:auto;display:flex;gap:6px;flex-shrink:0}
+.member-card .body{padding:16px 24px 24px}
+.member-card .empty{color:var(--border);font-size:13px;text-align:center;padding:24px 0}
+
+.task-item{margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.task-item:last-child{margin-bottom:0;padding-bottom:0;border:none}
+.task-info{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:8px}
+.task-info .title-wrap{flex:1;min-width:0;display:flex;align-items:center;gap:8px}
+.task-info .task-title{font-size:13px;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.task-info .req-from{font-size:11px;color:var(--muted);white-space:nowrap}
+
+.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;letter-spacing:.3px;flex-shrink:0}
+.tag-紧急{background:#fdeaea;color:#c0392b}
+.tag-普通{background:#fef5e7;color:#b8731f}
+.tag-不急{background:#eaf4ea;color:#2c7a3f}
+.tag-pending{background:#ede8f5;color:#5a3e8e}
+.tag-accepted{background:#eaf4ea;color:#2c7a3f}
+.tag-rejected{background:#f5e8e8;color:#888}
+.tag-done{background:#d4edda;color:#155724}
+
+.bar-wrap{height:22px;background:#f0ede6;border-radius:11px;overflow:hidden;cursor:pointer;position:relative}
+.bar-wrap:hover::after{content:'';position:absolute;inset:0;background:rgba(0,0,0,.03);border-radius:11px}
+.bar-fill{height:100%;border-radius:11px;transition:width .5s cubic-bezier(.4,0,.2,1);display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-size:11px;font-weight:600;color:#fff;min-width:0}
+.bar-0{background:linear-gradient(90deg,#d4d0c8,#c8c4ba);color:#666}
+.bar-30{background:linear-gradient(90deg,#c4a04a,var(--gold))}
+.bar-60{background:linear-gradient(90deg,#2c7a3f,#3d9e52)}
+.bar-100{background:linear-gradient(90deg,#155724,#2c7a3f)}
+.task-actions{display:flex;justify-content:flex-end;gap:4px;margin-top:5px}
+
+.request-list{display:flex;flex-direction:column;gap:12px}
+.request-card{background:var(--card);border-radius:var(--radius);padding:20px 24px;display:flex;align-items:center;gap:16px;box-shadow:var(--shadow);border:1px solid var(--border);border-left:4px solid var(--gold)}
+.request-card.urgent{border-left-color:#c0392b}
+.request-card .req-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.request-card .req-dot.pending{background:var(--gold)}
+.request-card .req-dot.urgent{background:#c0392b}
+.request-card .req-info{flex:1;min-width:0}
+.request-card .req-title{font-size:14px;font-weight:500;margin-bottom:4px}
+.request-card .req-meta{font-size:12px;color:var(--muted)}
+.request-card .req-actions{display:flex;gap:6px;white-space:nowrap}
+
+.btn{padding:8px 18px;border-radius:8px;border:none;font-size:12px;font-weight:500;cursor:pointer;transition:.2s;font-family:inherit;letter-spacing:.2px}
+.btn-primary{background:var(--navy);color:#fff}
+.btn-primary:hover{background:#1a2d50;transform:translateY(-1px)}
+.btn-success{background:#2c7a3f;color:#fff}
+.btn-success:hover{background:#236b33}
+.btn-outline{background:transparent;color:var(--navy);border:1px solid var(--navy)}
+.btn-outline:hover{background:rgba(15,26,48,.04)}
+.btn-danger{color:#c0392b;background:transparent;border:1px solid #e8d0d0}
+.btn-danger:hover{background:#fdf2f2}
+.btn-gold{background:var(--gold);color:#fff}
+.btn-gold:hover{background:#a37d3a}
+.btn-xs{padding:4px 10px;font-size:10px;border-radius:5px}
+
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);backdrop-filter:blur(2px);z-index:99;align-items:center;justify-content:center}
+.modal-bg.show{display:flex}
+.modal{background:var(--card);border-radius:var(--radius);padding:28px 30px;width:440px;max-width:92vw;box-shadow:0 20px 60px rgba(0,0,0,.15)}
+.modal h2{font-size:17px;font-weight:600;margin-bottom:16px;color:var(--navy)}
+.modal .field{margin-bottom:14px}
+.modal label{display:block;font-size:12px;font-weight:500;color:#555;margin-bottom:4px}
+.modal label .req{color:#c0392b;margin-left:2px}
+.modal input,.modal select{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:10px;font-size:13px;font-family:inherit;outline:none;transition:border-color .2s;background:#faf9f6}
+.modal input:focus,.modal select:focus{border-color:var(--navy);background:#fff}
+.modal input.error{border-color:#c0392b}
+.modal .field-error{color:#c0392b;font-size:11px;margin-top:2px;display:none}
+.modal .actions{display:flex;gap:10px;margin-top:20px;justify-content:flex-end}
+
+.range-row{display:flex;align-items:center;gap:12px}
+.range-row input[type=range]{flex:1;accent-color:var(--navy)}
+.range-row .val{font-weight:600;color:var(--navy);min-width:44px;text-align:center;font-size:15px}
+
+.toast{position:fixed;top:24px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:12px 32px;border-radius:10px;font-size:13px;font-weight:500;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,.15)}
+.toast.show{opacity:1}
+
+.user-pill{display:none;background:rgba(255,255,255,.1);padding:5px 14px;border-radius:20px;font-size:12px;align-items:center;gap:8px}
+.user-pill.show{display:flex}
+
+.badge-count{background:var(--gold);color:#fff;font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;margin-left:4px}
+
+@media(max-width:680px){.member-grid{grid-template-columns:1fr}.navbar{padding:0 16px}.main{padding:20px 12px}}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<nav class="navbar">
+  <div class="brand">市场部 · 任务中心 <span>/</span> Task Center</div>
+  <div class="nav-links">
+    <a href="/tasks.html" class="nav-link active">任务管理</a>
+    <a href="/" class="nav-link">共享空间</a>
+    <span style="font-size:11px;color:var(--gold);max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="publicUrlBar" title="公网地址"></span>
+    <div class="user-pill" id="userPill">
+      <span id="userName"></span>
+      <button class="btn btn-xs btn-outline" style="border-color:rgba(255,255,255,.3);color:#fff" onclick="logout()">退出</button>
+    </div>
+    <button class="btn btn-gold" style="padding:6px 16px;font-size:12px" onclick="openRequestModal()">⁺ 提需求</button>
+  </div>
+</nav>
+
+<div class="main">
+  <div class="tab-switch">
+    <button class="active" onclick="switchPanel('board',this)">📊 任务看板</button>
+    <button onclick="switchPanel('pool',this)">📥 需求池 <span class="badge-count" id="poolCount"></span></button>
+  </div>
+
+  <div class="panel" id="panel-board">
+    <div class="filters" id="filters">
+      <span class="f active" onclick="filt('all',this)">全部任务</span>
+      <span class="f" onclick="filt('紧急',this)">🔴 紧急</span>
+      <span class="f" onclick="filt('普通',this)">🟠 普通</span>
+      <span class="f" onclick="filt('不急',this)">🟢 不急</span>
+    </div>
+    <div class="member-grid" id="memberGrid"></div>
+  </div>
+
+  <div class="panel" id="panel-pool" style="display:none">
+    <div class="request-list" id="requestList"></div>
+    <div style="margin-top:32px" id="historySection">
+      <div style="font-size:14px;font-weight:600;color:var(--navy);margin-bottom:12px;display:flex;align-items:center;gap:8px">
+        📋 历史记录 <span style="font-size:11px;font-weight:400;color:var(--muted)" id="historyCount"></span>
+      </div>
+      <div class="request-list" id="historyList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modals (same as before, compressed) -->
+<div class="modal-bg" id="requestModal"><div class="modal" style="width:500px">
+<h2>提交任务需求</h2>
+<div class="field"><label>任务名称 <span class="req">*</span></label><input type="text" id="reqTitle" placeholder="请输入任务名称"><div class="field-error" id="errTitle">请输入任务名称</div></div>
+<div class="field"><label>任务详情</label><textarea id="reqDesc" placeholder="任务详细描述（选填）" style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:10px;font-size:13px;font-family:inherit;outline:none;resize:vertical;min-height:60px;background:#faf9f6" onfocus="this.style.borderColor='var(--navy)';this.style.background='#fff'" onblur="this.style.borderColor='var(--border)';this.style.background='#faf9f6'"></textarea></div>
+<div style="display:flex;gap:12px">
+  <div class="field" style="flex:1"><label>紧急程度 <span class="req">*</span></label><select id="reqUrgency"><option value="">请选择</option><option value="紧急">🔴 紧急</option><option value="普通">🟠 普通</option><option value="不急">🟢 不急</option></select><div class="field-error" id="errUrgency">请选择</div></div>
+  <div class="field" style="flex:1"><label>期望交付日期</label><input type="date" id="reqDeadline" style="background:#faf9f6"></div>
+</div>
+<div class="field"><label>需求部门 <span class="req">*</span></label><select id="reqRequester"><option value="">请选择</option><option value="业务中心">业务中心</option><option value="销售部">销售部</option><option value="物流部">物流部</option><option value="工程部">工程部</option><option value="人事部">人事部</option><option value="财务部">财务部</option><option value="总经理">总经理</option></select><div class="field-error" id="errRequester">请选择部门</div></div>
+<div class="field"><label>附件</label><input type="file" id="reqFiles" multiple style="padding:8px;font-size:12px"></div>
+<div class="actions"><button class="btn btn-outline" onclick="closeModal()">取消</button><button class="btn btn-primary" onclick="submitRequest()">提交到需求池</button></div>
+</div></div>
+
+<div class="modal-bg" id="addTaskModal"><div class="modal">
+<h2>添加我的任务</h2>
+<div class="field"><label>任务名称</label><input type="text" id="addTitle" placeholder="请输入任务名称"></div>
+<div class="field"><label>紧急程度</label><select id="addUrgency"><option value="紧急">🔴 紧急</option><option value="普通" selected>🟠 普通</option><option value="不急">🟢 不急</option></select></div>
+<div class="field"><label>当前进度</label><div class="range-row"><span>0%</span><input type="range" id="addProgress" min="0" max="100" value="0" oninput="document.getElementById('apVal').textContent=this.value+'%'"><span class="val" id="apVal">0%</span></div></div>
+<div class="actions"><button class="btn btn-outline" onclick="closeModal()">取消</button><button class="btn btn-primary" onclick="addMyTask()">添加</button></div>
+</div></div>
+
+<div class="modal-bg" id="progressModal"><div class="modal">
+<h2>更新进度</h2>
+<div id="progTask" style="font-weight:500;margin-bottom:8px"></div>
+<div class="range-row"><span>0%</span><input type="range" id="progSlider" min="0" max="100" value="0" oninput="document.getElementById('pv').textContent=this.value+'%'"><span class="val" id="pv">0%</span></div>
+<div class="actions"><button class="btn btn-outline" onclick="closeModal()">取消</button><button class="btn btn-primary" onclick="saveProgress()">保存</button></div>
+</div></div>
+
+<div class="modal-bg" id="assignModal"><div class="modal">
+<h2>指派任务</h2>
+<div id="assignInfo" style="font-weight:500;margin-bottom:8px;color:var(--navy)"></div>
+<div class="field"><label>指派给</label><select id="assignTo"><option value="张影">张影（设计）</option><option value="吴丙过">吴丙过（设计）</option><option value="刘玉斐">刘玉斐（运营）</option></select></div>
+<div class="actions"><button class="btn btn-outline" onclick="closeModal()">取消</button><button class="btn btn-primary" onclick="doAssign()">确认指派</button></div>
+</div></div>
+
+<div class="modal-bg" id="loginModal"><div class="modal">
+<h2>🔐 身份验证</h2>
+<div id="loginWho" style="margin-bottom:12px;font-weight:500;color:var(--navy)"></div>
+<div class="field"><label>密码</label><input type="password" id="loginPwd" placeholder="请输入密码" onkeydown="if(event.key==='Enter')doLogin()"></div>
+<div style="color:#c0392b;font-size:12px;display:none" id="loginErr">密码错误</div>
+<div class="actions"><button class="btn btn-outline" onclick="closeModal()">取消</button><button class="btn btn-primary" onclick="doLogin()">登录</button></div>
+</div></div>
+
+<div class="modal-bg" id="detailModal"><div class="modal" style="width:520px;max-height:80vh;overflow-y:auto">
+<h2>📋 详情</h2>
+<div id="detailContent"></div>
+<div class="actions"><button class="btn btn-primary" onclick="closeModal()">关闭</button></div>
+</div></div>
+
+<script>
+let filter='all',loggedAs=null,taskId=null,assignId=null;
+const M=[{n:'王婷婷',r:'市场部主管',a:'👩‍💼',c:'#4a6fa5',boss:1},{n:'张影',r:'设计',a:'👩‍🎨',c:'#b8954a'},{n:'吴丙过',r:'设计',a:'👨‍🎨',c:'#2c7a3f'},{n:'刘玉斐',r:'新媒体运营',a:'👩‍💻',c:'#b8731f'}];
+function toast(m){const e=document.getElementById('toast');e.textContent=m;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2000)}
+function bc(p){return p>=100?'bar-100':p>=60?'bar-60':p>=30?'bar-30':'bar-0'}
+
+function switchPanel(id,el){
+  document.getElementById('panel-board').style.display=id==='board'?'':'none';
+  document.getElementById('panel-pool').style.display=id==='pool'?'':'none';
+  document.querySelectorAll('.tab-switch button').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  if(id==='pool')loadRequests();
+}
+function filt(v,el){filter=v;document.querySelectorAll('.f').forEach(x=>x.classList.remove('active'));el.classList.add('active');loadBoard()}
+
+async function loadBoard(){
+  try{const r=await fetch('/api/tasks?_='+Date.now());const tasks=await r.json();
+  const list=filter==='all'?tasks:tasks.filter(t=>t.urgency===filter);
+  document.getElementById('memberGrid').innerHTML=M.map(m=>{
+    const mt=list.filter(t=>t.assignee===m.n),me=loggedAs===m.n,boss=(loggedAs==='王婷婷'&&m.boss);
+    const active=mt.filter(t=>t.status!=='completed');
+    const completed=mt.filter(t=>t.status==='completed');
+    const taskCard=(t,isDone)=>
+      `<div class="task-item" style="${isDone?'opacity:.7':''}">
+        <div class="task-info"><div class="title-wrap"><span class="tag tag-${t.urgency}">${t.urgency}</span><span class="task-title">${t.title}${isDone?' ✅':''}</span></div><span class="req-from">${t.requester}</span></div>
+        <div class="bar-wrap" onclick="${me&&!isDone?`op('${t.id}','${t.title.replace(/'/g,"\\'")}',${t.progress})`:'void(0)'}" title="${me&&!isDone?'点击调整':isDone?'已完成':''}">
+          <div class="bar-fill ${bc(t.progress)}" style="width:${Math.max(t.progress,5)}%">${t.progress>0?t.progress+'%':''}</div></div>
+        <div class="task-actions">
+          <button class="btn btn-outline btn-xs" onclick="event.stopPropagation();showDetail('${t.id}','task')">📋 详情</button>
+          ${isDone&&me?`<button class="btn btn-success btn-xs" onclick="event.stopPropagation();restoreTask('${t.id}')">🔄 重新开始</button>`:''}
+          ${boss&&!isDone?`<button class="btn btn-outline btn-xs" onclick="event.stopPropagation();oa('${t.id}','${t.title.replace(/'/g,"\\'")}','${t.assignee}')">↗ 指派</button>`:''}
+          ${me&&!isDone?`<button class="btn btn-danger btn-xs" onclick="event.stopPropagation();dt('${t.id}')">✕</button>`:''}
+        </div></div>`;
+    return `<div class="member-card"><div class="head">
+      <div class="avatar" style="background:${m.c}15;color:${m.c}">${m.a}</div>
+      <div class="info"><div class="name">${m.n}</div><div class="role">${m.r} · ${active.length}个进行中${completed.length?', '+completed.length+'个已完成':''}</div></div>
+      <div class="head-actions">
+        ${me?`<button class="btn btn-primary btn-xs" onclick="openAdd()">⁺ 加任务</button>`:''}
+        ${!loggedAs?`<button class="btn btn-outline btn-xs" onclick="openLogin('${m.n}')">🔐 登录</button>`:''}
+      </div></div><div class="body">
+      ${active.length?active.map(t=>taskCard(t,false)).join(''):'<div class="empty">暂无进行中任务</div>'}
+      ${completed.length?`
+        <div class="field" style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border)">
+          <div style="font-size:12px;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:6px" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':'none';this.querySelector('span').textContent=this.nextElementSibling.style.display==='none'?'▶':'▼'">
+            <span>▼</span> 已完成 · ${completed.length}个任务
+          </div>
+          <div style="margin-top:8px">${completed.map(t=>taskCard(t,true)).join('')}</div>
+        </div>`:''}
+      </div></div>`;
+  }).join('');loadRequests();}catch(e){document.getElementById('memberGrid').innerHTML='<div class="empty" style="grid-column:1/-1;padding:60px;color:#999">⚠ 无法连接服务器，请检查服务是否启动</div>'}
+}
+
+async function loadRequests(){
+  try{const r=await fetch('/api/requests?_='+Date.now());const reqs=await r.json();
+  const pending=reqs.filter(r=>r.status==='pending');
+  const history=reqs.filter(r=>r.status!=='pending');
+  document.getElementById('poolCount').textContent=pending.length?`${pending.length}`:'';
+  // 待处理
+  document.getElementById('requestList').innerHTML=pending.length
+    ?pending.map(r=>`<div class="request-card ${r.urgency==='紧急'?'urgent':''}">
+      <div class="req-dot ${r.urgency==='紧急'?'urgent':'pending'}"></div>
+      <div class="req-info"><div class="req-title"><span class="tag tag-${r.urgency}">${r.urgency}</span> ${r.title}${r.deadline?` <span style="font-size:11px;color:var(--muted)">📅 ${r.deadline} 前</span>`:''}</div>${r.description?`<div style="font-size:12px;color:#666;margin-top:4px;line-height:1.5">${r.description}</div>`:''}<div class="req-meta">${r.requester} · ${new Date(r.createdAt).toLocaleString('zh-CN',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}${r.attachments&&r.attachments.length?` · 📎 ${r.attachments.length}个附件`:' '}</div></div>
+      <div class="req-actions">${loggedAs?`<button class="btn btn-success btn-xs" onclick="hr('${r.id}','accept')">✅ 接单</button><button class="btn btn-danger btn-xs" onclick="hr('${r.id}','reject')">❌ 拒绝</button>`:`<button class="btn btn-outline btn-xs" onclick="toast('请先登录')">🔐 登录</button>`}<button class="btn btn-outline btn-xs" onclick="event.stopPropagation();showDetail('${r.id}','request')" style="margin-left:4px">📋 详情</button></div></div>`).join('')
+    :'<div style="text-align:center;padding:60px;color:#ccc;font-size:14px">📭 暂无待处理需求</div>';
+  // 历史记录
+  document.getElementById('historyCount').textContent=history.length?`共 ${history.length} 条`:'';
+  document.getElementById('historyList').innerHTML=history.length
+    ?history.map(r=>`<div class="request-card" style="border-left-color:${r.status==='accepted'?'#2c7a3f':'#ccc'};opacity:${r.status==='rejected'?.7:1}">
+      <div class="req-dot" style="background:${r.status==='accepted'?'#2c7a3f':'#999'}"></div>
+      <div class="req-info">
+        <div class="req-title"><span class="tag tag-${r.urgency}">${r.urgency}</span> ${r.title}${r.deadline?` <span style="font-size:11px;color:var(--muted)">📅 ${r.deadline} 前</span>`:''}</div>
+        ${r.description?`<div style="font-size:12px;color:#666;margin-top:4px;line-height:1.5">${r.description}</div>`:''}
+        <div class="req-meta">${r.requester} · ${r.status==='accepted'?'已接单 · '+r.acceptedBy:r.status==='rejected'?'已拒绝 · '+r.rejectedBy:''} · ${new Date(r.acceptedAt||r.rejectedAt||r.createdAt).toLocaleString('zh-CN',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}${r.attachments&&r.attachments.length?` · 📎 ${r.attachments.length}个附件`:' '}</div>
+      </div>
+      <div class="req-actions">
+        ${r.status==='rejected'&&loggedAs?`<button class="btn btn-success btn-xs" onclick="hr('${r.id}','accept')">🔄 重新接单</button>`:''}
+        <button class="btn btn-outline btn-xs" onclick="showDetail('${r.id}','request')">📋 详情</button>
+        ${loggedAs?`<button class="btn btn-danger btn-xs" onclick="event.stopPropagation();deleteRequest('${r.id}')">✕ 删除</button>`:''}
+        <span class="tag tag-${r.status==='accepted'?'accepted':'rejected'}" style="margin-left:4px">${r.status==='accepted'?'已接':'已拒'}</span>
+      </div></div>`).join('')
+    :'<div style="text-align:center;padding:20px;color:#ccc;font-size:13px">暂无历史记录</div>';
+  }catch(e){}
+}
+
+async function hr(id,action){if(!loggedAs)return toast('请先登录');await fetch('/api/requests/'+id+'/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,assignee:loggedAs})});toast(action==='accept'?'已接单 ✅':'已拒绝');loadBoard()}
+
+function openLogin(n){document.getElementById('loginWho').textContent='以 '+n+' 的身份登录';document.getElementById('loginPwd').value='';document.getElementById('loginErr').style.display='none';document.getElementById('loginModal').dataset.who=n;document.getElementById('loginModal').classList.add('show');setTimeout(()=>document.getElementById('loginPwd').focus(),200)}
+async function doLogin(){const n=document.getElementById('loginModal').dataset.who,p=document.getElementById('loginPwd').value;const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,password:p})});if(!r.ok){document.getElementById('loginErr').style.display='block';return}loggedAs=n;localStorage.setItem('tb_user',n);closeModal();ui();loadBoard();toast('✅ '+n+' 已登录')}
+function logout(){loggedAs=null;localStorage.removeItem('tb_user');ui();loadBoard()}
+function ui(){const p=document.getElementById('userPill'),n=document.getElementById('userName');if(loggedAs){p.classList.add('show');n.textContent='👤 '+loggedAs}else{p.classList.remove('show')}}
+function closeModal(){document.querySelectorAll('.modal-bg').forEach(m=>m.classList.remove('show'))}
+function openRequestModal(){document.getElementById('requestModal').classList.add('show')}
+
+async function submitRequest(){
+  let ok=true;
+  [{id:'reqTitle',err:'errTitle'},{id:'reqUrgency',err:'errUrgency'},{id:'reqRequester',err:'errRequester'}].forEach(f=>{
+    const el=document.getElementById(f.id),er=document.getElementById(f.err);
+    const v=el.value.trim();
+    if(!v){el.classList.add('error');er.style.display='block';ok=false}else{el.classList.remove('error');er.style.display='none'}
+  });
+  if(!ok)return toast('请填写必填项');
+  const fd=new FormData();
+  fd.append('title',document.getElementById('reqTitle').value.trim());
+  fd.append('description',document.getElementById('reqDesc').value.trim());
+  fd.append('urgency',document.getElementById('reqUrgency').value);
+  fd.append('deadline',document.getElementById('reqDeadline').value);
+  fd.append('requester',document.getElementById('reqRequester').value);
+  const files=document.getElementById('reqFiles').files;
+  for(const f of files)fd.append('attachments',f);
+  try{
+    const r=await fetch('/api/requests',{method:'POST',body:fd});
+    if(!r.ok){const d=await r.json();return toast(d.error)}
+    closeModal();toast('已提交到需求池 ✅');loadBoard();
+    ['reqTitle','reqDesc','reqDeadline'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''});
+    document.getElementById('reqUrgency').value='';document.getElementById('reqRequester').value='';document.getElementById('reqFiles').value=''
+  }catch(e){toast('提交失败，请检查网络')}
+}
+
+function openAdd(){document.getElementById('addTitle').value='';document.getElementById('addProgress').value=0;document.getElementById('apVal').textContent='0%';document.getElementById('addTaskModal').classList.add('show')}
+async function addMyTask(){
+  const title=document.getElementById('addTitle').value.trim();if(!title)return toast('请输入任务名称');
+  const p=parseInt(document.getElementById('addProgress').value)||0;
+  await fetch('/api/tasks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title,assignee:loggedAs,urgency:document.getElementById('addUrgency').value,requester:'自己添加',progress:p})});
+  closeModal();toast('已添加');loadBoard()
+}
+function op(id,title,p){taskId=id;document.getElementById('progTask').textContent=title;document.getElementById('progSlider').value=p;document.getElementById('pv').textContent=p+'%';document.getElementById('progressModal').classList.add('show')}
+async function saveProgress(){const p=parseInt(document.getElementById('progSlider').value);await fetch('/api/tasks/'+taskId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({progress:p})});closeModal();toast('进度已更新');loadBoard()}
+function oa(id,title,cur){assignId=id;document.getElementById('assignInfo').textContent=title+'（当前：'+cur+'）';document.getElementById('assignModal').classList.add('show')}
+async function doAssign(){const to=document.getElementById('assignTo').value;await fetch('/api/tasks/'+assignId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({assignee:to})});closeModal();toast('已指派给 '+to);loadBoard()}
+async function dt(id){if(!confirm('确定删除？'))return;await fetch('/api/tasks/'+id,{method:'DELETE'});toast('已删除');loadBoard()}
+async function restoreTask(id){await fetch('/api/tasks/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'active',progress:0})});toast('已恢复为进行中');loadBoard()}
+async function deleteRequest(id){if(!confirm('确定从历史记录中删除此需求？'))return;await fetch('/api/requests/'+id,{method:'DELETE'});toast('已删除');loadBoard()}
+
+function showDetail(id,type){
+  // 先查任务列表
+  Promise.all([
+    fetch('/api/tasks?_='+Date.now()).then(r=>r.json()),
+    fetch('/api/requests?_='+Date.now()).then(r=>r.json())
+  ]).then(([tasks,requests])=>{
+    // 优先取任务数据，不够的用需求数据补
+    let item=tasks.find(t=>t.id===id)||requests.find(r=>r.id===id);
+    const req=requests.find(r=>r.id===id);
+    if(req&&(!item.description))item={...req,...item};
+    if(!item)return toast('未找到详情');
+    const dc=document.getElementById('detailContent');
+    const att=(item.attachments||req?.attachments||[]);
+    const files=att.map(a=>`<div style="padding:6px 10px;background:#f8f6f3;border-radius:6px;margin-top:4px;font-size:12px">📎 ${a.name} (${a.sizeStr||(a.size?formatFileSize(a.size):'')}) <a href="/api/requests/attachment/${a.path}" download style="color:var(--navy);text-decoration:underline">下载</a></div>`).join('');
+    dc.innerHTML=`
+      <div class="field"><label>任务名称</label><div style="font-size:14px;font-weight:500">${item.title||'无标题'}</div></div>
+      ${item.description?`<div class="field"><label>任务详情</label><div style="font-size:13px;color:#555;line-height:1.6;white-space:pre-wrap;background:#faf9f6;padding:10px;border-radius:8px">${item.description}</div></div>`:''}
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <div class="field" style="flex:1;min-width:100px"><label>紧急</label><span class="tag tag-${item.urgency}">${item.urgency}</span></div>
+        <div class="field" style="flex:1;min-width:100px"><label>需求方</label><div style="font-size:14px">${item.requester}</div></div>
+        ${item.deadline?`<div class="field" style="flex:1;min-width:100px"><label>交付日</label><div style="font-size:14px;color:#c0392b">📅 ${item.deadline}</div></div>`:''}
+      </div>
+      <div class="field"><label>创建时间</label><div style="font-size:13px">${new Date(item.createdAt).toLocaleString('zh-CN')}</div></div>
+      ${item.assignee?`<div class="field"><label>负责人</label><div style="font-size:14px">${item.assignee}${item.progress!==undefined?` · <span style="color:var(--navy);font-weight:600">${item.progress}%</span>`:''}</div></div>`:''}
+      ${item.acceptedBy?`<div class="field"><label>接单</label><div style="font-size:13px">${item.acceptedBy} · ${new Date(item.acceptedAt||'').toLocaleString('zh-CN')}</div></div>`:''}
+      ${item.rejectedBy?`<div class="field"><label>拒绝</label><div style="font-size:13px;color:#999">${item.rejectedBy} · ${new Date(item.rejectedAt||'').toLocaleString('zh-CN')}</div></div>`:''}
+      ${files?`<div class="field"><label>附件 (${att.length}个)</label>${files}</div>`:''}
+    `;
+    document.getElementById('detailModal').classList.add('show');
+  });
+}
+function formatFileSize(b){if(b<1024)return b+'B';if(b<1048576)return(b/1024).toFixed(1)+'KB';return(b/1048576).toFixed(1)+'MB'}
+
+// 点击空白处不关闭窗口 - 只有点取消按钮才能关
+document.querySelectorAll('.modal-bg').forEach(m=>{m.addEventListener('click',()=>{})});
+loggedAs=localStorage.getItem('tb_user')||null;ui();loadBoard();setInterval(loadBoard,30000);
+// 显示公网地址
+fetch('/api/public-url').then(r=>r.json()).then(d=>{
+  if(d.url&&d.url!=='暂无')document.getElementById('publicUrlBar').textContent='🌐 '+d.url+'/tasks.html'
+});
+</script>
+</body>
+</html>
