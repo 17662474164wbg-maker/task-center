@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 const UPLOAD_DIR = path.join(__dirname, 'uploads');
 const META_FILE = path.join(UPLOAD_DIR, '_meta.json');
 
@@ -402,19 +402,5 @@ app.listen(PORT, '0.0.0.0', () => {
     }
   }
   console.log(`文件存储: ${UPLOAD_DIR}`);
-  // 自动启动serveo隧道（守护模式，断了自连）
-  const { spawn } = require('child_process');
-  function startTunnel() {
-    const ssh = spawn('ssh', [
-      '-i', require('os').homedir() + '/.ssh/id_rsa',
-      '-o', 'StrictHostKeyChecking=no',
-      '-o', 'ServerAliveInterval=15',
-      '-o', 'TCPKeepAlive=yes',
-      '-R', 'wubing-task:80:localhost:' + PORT,
-      'serveo.net'
-    ], { detached: true, stdio: 'ignore' });
-    ssh.on('close', () => { setTimeout(startTunnel, 3000); });
-    ssh.unref();
-  }
-  setTimeout(startTunnel, 2000);
+  // Render部署时用PORT环境变量，本地默认3000
 });
